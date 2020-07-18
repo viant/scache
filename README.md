@@ -1,0 +1,2 @@
+# scache
+Cache in go
