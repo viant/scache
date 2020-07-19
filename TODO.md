@@ -1,0 +1,2 @@
+- Add keys iterator
+- Add method to persist and reload  keys (key to address) to disk (for memory mapped file data)
