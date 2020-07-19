@@ -3,10 +3,13 @@ package scache
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"math/rand"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestNewCache(t *testing.T) {
@@ -56,6 +59,54 @@ func TestNewCache(t *testing.T) {
 		}
 		cache.Close()
 	}
+}
+
+func TestCacheMultiOperation(t *testing.T) {
+
+	rand.Seed(time.Now().Unix())
+	maxEntries := 100000
+
+	{
+		cache, err := NewMemCache(0, maxEntries, 128)
+		if !assert.Nil(t, err) {
+			return
+		}
+		runMultiOperationTest(t, maxEntries, cache)
+	}
+	{
+		cache, err := NewMemCache(12, maxEntries, 128)
+		if !assert.Nil(t, err) {
+			return
+		}
+		runMultiOperationTest(t, maxEntries, cache)
+	}
+
+}
+
+func runMultiOperationTest(t *testing.T, maxEntries int, cache *Cache) {
+	waitGroup := &sync.WaitGroup{}
+	var runTest = func() {
+		defer waitGroup.Done()
+		for i := 0; i < maxEntries; i++ {
+			r := int(rand.Uint32()) % maxEntries
+			key := fmt.Sprintf("key:%v", r)
+			value := fmt.Sprintf("val.%v", r)
+			if _, err := cache.Get(key); err != nil {
+				err = cache.Set(key, []byte(value))
+				val, _ := cache.Get(key)
+				assert.EqualValues(t, val, value)
+			}
+			err := cache.Delete(key)
+			assert.Nil(t, err)
+		}
+	}
+
+	for i := 0; i < 10; i++ {
+		waitGroup.Add(1)
+		runTest()
+	}
+
+	waitGroup.Wait()
 }
 
 func BenchmarkService_MemGet(b *testing.B) {
@@ -112,7 +163,7 @@ func readFromCacheParallel(b *testing.B, payload []byte, location string) {
 	})
 }
 
-func initCache(entries, entrySize int, location string) Service {
+func initCache(entries, entrySize int, location string) *Cache {
 	cache, _ := New(&Config{
 		Location:   location,
 		Shards:     256,

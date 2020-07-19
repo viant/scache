@@ -37,21 +37,27 @@ To boost write performance, every Set operation append data to the data pool, an
 This cache has been inspired by [BigCache](https://github.com/allegro/bigcache) and uses map[uint64]uint32 for key hash to data address mapping.
 Using non pointers in the map makes GC ommit map content. 
 
+See also: [How BigCache avoids expensive GC cycles and speeds up concurrent access in Go](https://dev.to/douglasmakey/how-bigcache-avoids-expensive-gc-cycles-and-speeds-up-concurrent-access-in-go-12bb)
+
 ## Usage
 
 ```go
 
 func CacheUsage() {
 	var cacheUsageType int
-	var cache scache.Service
+	var cache *scache.Cache
 	var err error
 	switch cacheUsageType {
 	case InMemoryExample:
 		cache, err = scache.New(&scache.Config{SizeMb: 256})
+		//or 
+		cache, err = scache.NewMemCache(256, 0, 0)
 	case MemoryMappedFileExample:
 		cache, err = scache.New(&scache.Config{SizeMb: 256, Location: "/tmp/data.sch"})
+		//or 
+		cache, err = scache.NewMmapCache("/tmp/data.sch", 256, 0, 0)
 	case InMemoryEntriesExample:
-		cache, err = scache.New(&scache.Config{MaxEntries:5000000, EntrySize:128})
+		cache, err = scache.New(&scache.Config{MaxEntries: 5000000, EntrySize: 128})
 	}
 	if err != nil {
 		log.Fatal(err)

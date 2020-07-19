@@ -8,19 +8,8 @@ import (
 
 const segmentsSize = 2
 
-//Service represents service
-type Service interface {
-	//Set sets key
-	Set(key string, value []byte) error
-	//Delete deletes the key
-	Delete(key string) error
-	//Delete deletes the key
-	Get(key string) ([]byte, error)
-	//Close closes the cache
-	Close() error
-}
-
-type service struct {
+//Cache represents cache service
+type Cache struct {
 	config   *Config
 	data     []byte
 	segments [segmentsSize]segment
@@ -30,7 +19,7 @@ type service struct {
 	*shardedMap
 }
 
-func (s *service) nextIndex(idx uint32) uint32 {
+func (s *Cache) nextIndex(idx uint32) uint32 {
 	next := uint32(0)
 	if idx == 0 {
 		next = 1
@@ -38,7 +27,7 @@ func (s *service) nextIndex(idx uint32) uint32 {
 	return next
 }
 
-func (s *service) newShardedMap() *shardedMap {
+func (s *Cache) newShardedMap() *shardedMap {
 	result := s.shardedMap
 	s.shardedMap = nil
 	if result == nil {
@@ -52,7 +41,7 @@ func (s *service) newShardedMap() *shardedMap {
 }
 
 //Set sets key with value or error
-func (s *service) Set(key string, value []byte) error {
+func (s *Cache) Set(key string, value []byte) error {
 	idx := atomic.LoadUint32(&s.index)
 	if !s.segments[idx].set(key, value) {
 		nextIndex := s.nextIndex(idx)
@@ -71,14 +60,14 @@ func (s *service) Set(key string, value []byte) error {
 }
 
 //Delete deletes key in the cache
-func (s *service) Delete(key string) error {
+func (s *Cache) Delete(key string) error {
 	idx := atomic.LoadUint32(&s.index)
 	s.segments[idx].delete(key)
 	return nil
 }
 
 //Get returns a cache entry for the supplied key or error
-func (s *service) Get(key string) ([]byte, error) {
+func (s *Cache) Get(key string) ([]byte, error) {
 	idx := atomic.LoadUint32(&s.index)
 	value, has := s.segments[idx].get(key)
 	if !has {
@@ -93,8 +82,8 @@ func (s *service) Get(key string) ([]byte, error) {
 	return value, nil
 }
 
-//Close closes the service
-func (s *service) Close() (err error) {
+//Close closes the Cache
+func (s *Cache) Close() (err error) {
 	for i := range s.segments {
 		if e := s.segments[i].close(); e != nil {
 			err = e
@@ -103,10 +92,10 @@ func (s *service) Close() (err error) {
 	return err
 }
 
-//New creates a service
-func New(config *Config) (Service, error) {
+//New creates a Cache
+func New(config *Config) (*Cache, error) {
 	config.Init()
-	var cache = &service{
+	var cache = &Cache{
 		config: config,
 	}
 	for i := range cache.segments {
@@ -118,4 +107,14 @@ func New(config *Config) (Service, error) {
 	}
 	cache.shardedMap = newShardedMap(config)
 	return cache, nil
+}
+
+//NewMemCache creates a memory backed cache
+func NewMemCache(sizeMb, maxEntries, entrySize int) (*Cache, error) {
+	return New(&Config{SizeMb: sizeMb, EntrySize: entrySize, MaxEntries: maxEntries})
+}
+
+//NewMmapCache creates a memory mapped filed backed cache
+func NewMmapCache(location string, sizeMb, maxEntries, entrySize int) (*Cache, error) {
+	return New(&Config{Location: location, SizeMb: sizeMb, EntrySize: entrySize, MaxEntries: maxEntries})
 }

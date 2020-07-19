@@ -2,12 +2,11 @@ package scache
 
 import (
 	"encoding/binary"
-	"fmt"
 	"sync/atomic"
-	"time"
 )
 
 /*
+Idea taken from
 https://dev.to/douglasmakey/how-bigcache-avoids-expensive-gc-cycles-and-speeds-up-concurrent-access-in-go-12bb
 */
 
@@ -31,14 +30,9 @@ func (s *segment) close() error {
 }
 
 func (s *segment) reset(aMap *shardedMap) {
-	started := time.Now()
-	keys := s.keys
 	s.shardedMap = aMap
 	atomic.StoreUint32(&s.tail, 1)
 	atomic.StoreUint32(&s.keys, 0)
-	if Debug {
-		fmt.Printf("Switched cache segment[%v] size:%v: elapsed: %s\n", s.index, keys, time.Now().Sub(started))
-	}
 }
 
 func (s *segment) get(key string) ([]byte, bool) {

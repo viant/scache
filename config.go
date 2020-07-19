@@ -2,9 +2,9 @@ package scache
 
 const (
 	//DefaultCacheSizeMb default cache size
-	DefaultCacheSizeMb  = 1
+	DefaultCacheSizeMb = 1
 	//MinShards min shards
-	MinShards           = 32
+	MinShards = 32
 	//DefaultShardMapSize default map shard allocation size.
 	DefaultShardMapSize = 32 * 1024
 	mb                  = 1024 * 1024

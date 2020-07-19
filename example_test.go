@@ -14,13 +14,17 @@ const (
 func ExampleNew() {
 
 	var cacheUsageType int
-	var cache scache.Service
+	var cache *scache.Cache
 	var err error
 	switch cacheUsageType {
 	case InMemoryExample:
 		cache, err = scache.New(&scache.Config{SizeMb: 256})
+		//or
+		cache, err = scache.NewMemCache(256, 0, 0)
 	case MemoryMappedFileExample:
 		cache, err = scache.New(&scache.Config{SizeMb: 256, Location: "/tmp/data.sch"})
+		//or
+		cache, err = scache.NewMmapCache("/tmp/data.sch", 256, 0, 0)
 	case InMemoryEntriesExample:
 		cache, err = scache.New(&scache.Config{MaxEntries: 5000000, EntrySize: 128})
 	}

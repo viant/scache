@@ -1,2 +1,2 @@
-// Package scache defines cache service interface and implementation
+// Package scache defines cache Cache interface and implementation
 package scache
