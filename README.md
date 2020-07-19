@@ -34,8 +34,8 @@ and the active is demoted to the secondary.
 This approach double effective memory, but does not require housekeeping on LRU algorithm overhead.
 To boost write performance, every Set operation append data to the data pool, and old address is invalidated.   
 
-This cache has been inspired by [BigCache](https://github.com/allegro/bigcache) and uses map[uint64]uint32 for hash ke to data address. mapping.
-Using non pointers in the map make GC ommit map content. 
+This cache has been inspired by [BigCache](https://github.com/allegro/bigcache) and uses map[uint64]uint32 for key hash to data address mapping.
+Using non pointers in the map makes GC ommit map content. 
 
 ## Usage
 
