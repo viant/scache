@@ -6,7 +6,7 @@ import (
 
 //shardedMap represents sharded map
 type shardedMap struct {
-	config *Config
+	config Config
 	lock   []sync.RWMutex
 	maps   []map[uint64]uint32
 	hasher fnv64a
@@ -51,7 +51,7 @@ func (m *shardedMap) delete(key string) bool {
 
 func newShardedMap(config *Config) *shardedMap {
 	aMap := &shardedMap{
-		config: config,
+		config: *config,
 		lock:   make([]sync.RWMutex, config.Shards),
 		maps:   make([]map[uint64]uint32, config.Shards),
 	}

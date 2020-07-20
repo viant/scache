@@ -2,6 +2,7 @@ package scache
 
 import (
 	"encoding/binary"
+	"sync"
 	"sync/atomic"
 )
 
@@ -20,6 +21,7 @@ type segment struct {
 	tail   uint32
 	keys   uint32
 	mmap   *mmap
+	sync.RWMutex
 }
 
 func (s *segment) close() error {
@@ -30,13 +32,16 @@ func (s *segment) close() error {
 }
 
 func (s *segment) reset(aMap *shardedMap) {
+	s.RWMutex.Lock()
 	s.shardedMap = aMap
 	atomic.StoreUint32(&s.tail, 1)
 	atomic.StoreUint32(&s.keys, 0)
+	s.RWMutex.Unlock()
 }
 
 func (s *segment) get(key string) ([]byte, bool) {
-	headerAddress, ok := s.shardedMap.get(key)
+	shardedMap := s.getShardedMap()
+	headerAddress, ok := shardedMap.get(key)
 	if !ok {
 		return nil, false
 	}
@@ -50,7 +55,8 @@ func (s *segment) get(key string) ([]byte, bool) {
 }
 
 func (s *segment) delete(key string) {
-	if s.shardedMap.delete(key) {
+	shardedMap := s.getShardedMap()
+	if shardedMap.delete(key) {
 	updateKeys:
 		if keys := atomic.LoadUint32(&s.keys); keys > 1 {
 			if !atomic.CompareAndSwapUint32(&s.keys, keys, keys-1) {
@@ -60,10 +66,19 @@ func (s *segment) delete(key string) {
 	}
 }
 
+func (s *segment) getShardedMap() *shardedMap {
+	s.RWMutex.RLock()
+	result := s.shardedMap
+	s.RWMutex.RUnlock()
+	return result
+}
+
+
 func (s *segment) set(key string, value []byte) bool {
 	if maxEntries := s.config.MaxEntries; maxEntries > 0 && int(atomic.LoadUint32(&s.keys)) > maxEntries {
 		return false
 	}
+	shardedMap := s.getShardedMap()
 	blobSize := len(value) + headerSize
 	nextAddress := int(atomic.AddUint32(&s.tail, uint32(blobSize)))
 	if nextAddress >= len(s.data) { //out of memory,
@@ -73,7 +88,7 @@ func (s *segment) set(key string, value []byte) bool {
 	binary.LittleEndian.PutUint32(s.data[headerAddress:headerAddress+headerSize], uint32(len(value)))
 	entryAddress := headerAddress + headerSize
 	copy(s.data[entryAddress:entryAddress+len(value)], value)
-	if hadKey := s.shardedMap.put(key, uint32(headerAddress)); !hadKey {
+	if hadKey := shardedMap.put(key, uint32(headerAddress)); !hadKey {
 		atomic.AddUint32(&s.keys, 1)
 	}
 	return true

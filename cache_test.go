@@ -188,6 +188,7 @@ func writeToCache(b *testing.B, payload []byte, location string) {
 	}
 
 	cache := initCache(maxEntries, len(payload), location)
+	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < maxEntries; i++ {
 		cache.Set(strconv.Itoa(i), payload)

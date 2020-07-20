@@ -34,8 +34,10 @@ func (s *Cache) newShardedMap() *shardedMap {
 		result = newShardedMap(s.config)
 	}
 	go func() {
+		s.mutex.Lock()
 		// preallocate new keys space, for next segment switch
 		s.shardedMap = newShardedMap(s.config)
+		s.mutex.Unlock()
 	}()
 	return result
 }
