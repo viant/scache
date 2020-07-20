@@ -53,7 +53,8 @@ func (s *Cache) Set(key string, value []byte) error {
 			atomic.StoreUint32(&s.index, nextIndex)
 		}
 		s.mutex.Unlock()
-		if !s.segments[nextIndex].set(key, value) {
+		idx = atomic.LoadUint32(&s.index)
+		if !s.segments[idx].set(key, value) {
 			return errors.Errorf("failed to set key: %v", key)
 		}
 

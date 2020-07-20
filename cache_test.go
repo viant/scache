@@ -1,6 +1,7 @@
 package scache
 
 import (
+	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
@@ -219,4 +220,46 @@ func writeToCacheParallel(b *testing.B, payload []byte, location string) {
 
 		}
 	})
+}
+
+
+
+func TestConcurrency(t *testing.T) {
+	c, _ := New(&Config{
+		MaxEntries: 1024*1024,
+		Shards:     32768,
+	})
+	keys := make([]string, 1024*1024)
+	for i := range keys {
+		keys[i] = fmt.Sprintf("key:%d", i)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < 1024; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ticker := time.NewTicker(time.Millisecond)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					key := keys[rand.Intn(len(keys))]
+					if err := c.Set(key, []byte("v")); err != nil {
+						t.Errorf("Set(%s, v): %v", key, err)
+					}
+					if _, err := c.Get(key); err != nil {
+						t.Errorf("Get(%s): %v", key, err)
+					}
+				case <-ctx.Done():
+
+					return
+				}
+			}
+		}()
+	}
+	wg.Wait()
 }
