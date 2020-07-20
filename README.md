@@ -86,22 +86,21 @@ Benchmark with 256 payload on OSX (2.4 GHz 8-Core Intel Core i9), SSD
 
 ```bash
 BenchmarkService_MemGet
-BenchmarkService_MemGet-16             	 4015231	       305 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MemGet-16             	 5116568	       240 ns/op	       7 B/op	       0 allocs/op
 BenchmarkService_MMapGet
-BenchmarkService_MMapGet-16            	 4223742	       306 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MMapGet-16            	 4840741	       243 ns/op	       7 B/op	       0 allocs/op
 BenchmarkService_MMapGetParallel
-BenchmarkService_MMapGetParallel-16    	15416742	        79.9 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MMapGetParallel-16    	24236748	        46.7 ns/op	       7 B/op	       0 allocs/op
 BenchmarkService_MemGetParallel
-BenchmarkService_MemGetParallel-16     	14995497	        76.6 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MemGetParallel-16     	26067524	        40.8 ns/op	       7 B/op	       0 allocs/op
 BenchmarkService_MemSet
-BenchmarkService_MemSet-16             	 5381566	       242 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MemSet-16             	 4772373	       251 ns/op	       7 B/op	       0 allocs/op
 BenchmarkService_MMapSet
-BenchmarkService_MMapSet-16            	 3939914	       318 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MMapSet-16            	 3638016	       346 ns/op	       7 B/op	       0 allocs/op
 BenchmarkService_MemSetParallel
-BenchmarkService_MemSetParallel-16     	 8458681	       127 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MemSetParallel-16     	11543521	        91.9 ns/op	       7 B/op	       0 allocs/op
 BenchmarkService_MMapSetParallel
-BenchmarkService_MMapSetParallel-16    	 2161143	       758 ns/op	       7 B/op	       0 allocs/op
-PASS
+BenchmarkService_MMapSetParallel-16    	 1000000	      1984 ns/op	       7 B/op	       0 allocs/opPASS
 ```
 
 

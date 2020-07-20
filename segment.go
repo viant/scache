@@ -2,7 +2,6 @@ package scache
 
 import (
 	"encoding/binary"
-	"sync"
 	"sync/atomic"
 )
 
@@ -21,7 +20,7 @@ type segment struct {
 	tail   uint32
 	keys   uint32
 	mmap   *mmap
-	sync.RWMutex
+
 }
 
 func (s *segment) close() error {
@@ -32,11 +31,17 @@ func (s *segment) close() error {
 }
 
 func (s *segment) reset(aMap *shardedMap) {
-	s.RWMutex.Lock()
+
+
+	for i :=  range aMap.maps {
+		s.shardedMap.lock[i].Lock()
+		s.shardedMap.maps[i] = aMap.maps[i]
+		s.shardedMap.lock[i].Unlock()
+	}
 	s.shardedMap = aMap
 	atomic.StoreUint32(&s.tail, 1)
 	atomic.StoreUint32(&s.keys, 0)
-	s.RWMutex.Unlock()
+
 }
 
 func (s *segment) get(key string) ([]byte, bool) {
@@ -67,9 +72,7 @@ func (s *segment) delete(key string) {
 }
 
 func (s *segment) getShardedMap() *shardedMap {
-	s.RWMutex.RLock()
 	result := s.shardedMap
-	s.RWMutex.RUnlock()
 	return result
 }
 
