@@ -249,6 +249,7 @@ func TestConcurrency(t *testing.T) {
 						t.Errorf("Set(%s, v): %v", key, err)
 					}
 					//since only 1K entries would be allowed at any time (per config), if may happen that, entry is gone if there were 1k  processing writes
+					//thus not such key error may happens, other test Get operation,
 					if _, err := c.Get(key); err != nil {
 						//t.Errorf("Get(%s): %v", key, err)
 					}
