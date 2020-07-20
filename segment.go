@@ -31,14 +31,11 @@ func (s *segment) close() error {
 }
 
 func (s *segment) reset(aMap *shardedMap) {
-
-
 	for i :=  range aMap.maps {
 		s.shardedMap.lock[i].Lock()
 		s.shardedMap.maps[i] = aMap.maps[i]
 		s.shardedMap.lock[i].Unlock()
 	}
-	s.shardedMap = aMap
 	atomic.StoreUint32(&s.tail, 1)
 	atomic.StoreUint32(&s.keys, 0)
 
