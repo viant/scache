@@ -42,7 +42,6 @@ func (c *Config) Init() {
 			c.Shards = candidate
 		}
 	}
-
 	if c.MaxEntries > 0 {
 		c.shardMapSize = 2 * (c.MaxEntries / c.Shards)
 	} else {
