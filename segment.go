@@ -14,15 +14,13 @@ const headerSize = 4
 
 type segment struct {
 	*shardedMap
-	config *Config
-	index  uint32
-	data   []byte
+	config   *Config
+	index    uint32
+	data     []byte
 	dataSize uint32
-	tail   uint32
-	keys   uint32
-	mmap   *mmap
-
-
+	tail     uint32
+	keys     uint32
+	mmap     *mmap
 }
 
 func (s *segment) close() error {
@@ -33,7 +31,7 @@ func (s *segment) close() error {
 }
 
 func (s *segment) reset(aMap *shardedMap) {
-	for i :=  range aMap.maps {
+	for i := range aMap.maps {
 		s.shardedMap.lock[i].Lock()
 		s.shardedMap.maps[i] = aMap.maps[i]
 		s.shardedMap.lock[i].Unlock()
@@ -42,27 +40,26 @@ func (s *segment) reset(aMap *shardedMap) {
 	atomic.StoreUint32(&s.keys, 0)
 }
 
-
 func (s *segment) get(key string) ([]byte, bool) {
 	shardedMap := s.getShardedMap()
 	headerAddress := shardedMap.getAddress(key)
 	if headerAddress == 0 {
 		return nil, false
 	}
-	headerAddressEnd := headerAddress+headerSize
+	headerAddressEnd := headerAddress + headerSize
 	if headerAddressEnd > s.dataSize {
 		return nil, false
 	}
-	entrySize := binary.LittleEndian.Uint32(s.data[headerAddress : headerAddressEnd])
-	if headerAddressEnd > s.dataSize {
+	entrySize := binary.LittleEndian.Uint32(s.data[headerAddress:headerAddressEnd])
+	if headerAddressEnd > atomic.LoadUint32(&s.tail) {
 		return nil, false
 	}
 	dataAddress := headerAddress + headerSize
 	dataAddressEnd := dataAddress + entrySize
-	if dataAddressEnd > atomic.LoadUint32(&s.tail) {
+	if dataAddressEnd > s.dataSize {
 		return nil, false
 	}
-	return s.data[dataAddress : dataAddressEnd], true
+	return s.data[dataAddress:dataAddressEnd], true
 }
 
 func (s *segment) delete(key string) {
@@ -82,7 +79,6 @@ func (s *segment) getShardedMap() *shardedMap {
 	return result
 }
 
-
 func (s *segment) set(key string, value []byte) bool {
 	if maxEntries := s.config.MaxEntries; maxEntries > 0 && int(atomic.LoadUint32(&s.keys)) > maxEntries {
 		return false
@@ -91,6 +87,7 @@ func (s *segment) set(key string, value []byte) bool {
 	blobSize := len(value) + headerSize
 	nextAddress := int(atomic.AddUint32(&s.tail, uint32(blobSize)))
 	if nextAddress >= len(s.data) { //out of memory,
+		atomic.SwapUint32(&s.tail, s.dataSize-1)
 		return false
 	}
 	headerAddress := nextAddress - blobSize

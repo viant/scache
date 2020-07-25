@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"math/rand"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -165,12 +166,20 @@ func readFromCacheParallel(b *testing.B, payload []byte, location string) {
 }
 
 func initCache(entries, entrySize int, location string) *Cache {
-	cache, _ := New(&Config{
+	cfg := &Config{
 		Location:   location,
 		Shards:     256,
 		EntrySize:  entrySize,
 		MaxEntries: 2 * entries,
-	})
+	}
+	cfg.Init()
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	freeMB := int(m.Frees / mb)
+	if cfg.SizeMb < freeMB-1024 && freeMB-1024 > 0 {
+		cfg.SizeMb = freeMB - 1024
+	}
+	cache, _ := New(cfg)
 	return cache
 }
 
@@ -221,8 +230,6 @@ func writeToCacheParallel(b *testing.B, payload []byte, location string) {
 		}
 	})
 }
-
-
 
 func TestConcurrency(t *testing.T) {
 	c, _ := New(&Config{

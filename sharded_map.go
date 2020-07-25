@@ -28,7 +28,7 @@ func (m *shardedMap) getAddress(key string) uint32 {
 
 func (m *shardedMap) put(key string, value uint32) bool {
 	hashedKey := m.hasher.Sum64(key)
-	index := hashedKey &  m.shardsHash
+	index := hashedKey & m.shardsHash
 	m.lock[index].Lock()
 	_, has := m.maps[index][hashedKey]
 	m.maps[index][hashedKey] = value

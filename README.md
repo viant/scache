@@ -83,16 +83,15 @@ func CacheUsage() {
 
 Benchmark with 256 payload on OSX (2.4 GHz 8-Core Intel Core i9), SSD
 
-
 ```bash
-BenchmarkService_MemGet-16             	 4203718	       298 ns/op	       7 B/op	       0 allocs/op
-BenchmarkService_MMapGet-16            	 4158256	       301 ns/op	       7 B/op	       0 allocs/op
-BenchmarkService_MMapGetParallel-16    	29991412	       39.1 ns/op	       7 B/op	       0 allocs/op
-BenchmarkService_MemGetParallel-16     	32007300	       37.0 ns/op	       7 B/op	       0 allocs/op
-BenchmarkService_MemSet-16             	 5573509	       250 ns/op	       7 B/op	       0 allocs/op
-BenchmarkService_MMapSet-16            	 4120843	       328 ns/op	       7 B/op	       0 allocs/op
-BenchmarkService_MemSetParallel-16     	12900744	       77.7 ns/op	       7 B/op	       0 allocs/op
-BenchmarkService_MMapSetParallel-16    	 2439478	       467 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MemGet-16             	 4182728	       303 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MMapGet-16            	 4107274	       287 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MMapGetParallel-16    	28591705	       43.0 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MemGetParallel-16     	33848409	       39.0 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MemSet-16             	 5562770	       243 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MMapSet-16            	 2569632	       575 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MemSetParallel-16     	15095199	       69.4 ns/op	       7 B/op	       0 allocs/op
+BenchmarkService_MMapSetParallel-16    	 2290414	       592 ns/op	       7 B/op	       0 allocs/op
 ```
 
 
