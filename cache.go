@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const segmentsSize = 2
@@ -16,6 +17,7 @@ type Cache struct {
 	index    uint32
 	mutex    sync.Mutex
 	mmap     *mmap
+	OnSegmentSwitch
 	*shardedMap
 }
 
@@ -45,12 +47,19 @@ func (s *Cache) newShardedMap() *shardedMap {
 //Set sets key with value or error
 func (s *Cache) Set(key string, value []byte) error {
 	idx := atomic.LoadUint32(&s.index)
-	if !s.segments[idx].set(key, value) {
+	isSet := s.segments[idx].set(key, value)
+	if !isSet {
 		nextIndex := s.nextIndex(idx)
 		s.mutex.Lock()
 		if currIdx := atomic.LoadUint32(&s.index); currIdx == idx {
+
+			startTime := time.Now()
+			fn := s.OnSegmentSwitch
 			s.segments[nextIndex].reset(s.newShardedMap())
 			atomic.StoreUint32(&s.index, nextIndex)
+			if fn != nil {
+				fn(idx, atomic.LoadUint32(&s.segments[idx].keys), time.Now().Sub(startTime))
+			}
 		}
 		s.mutex.Unlock()
 		idx = atomic.LoadUint32(&s.index)

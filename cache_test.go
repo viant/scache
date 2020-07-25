@@ -232,16 +232,14 @@ func writeToCacheParallel(b *testing.B, payload []byte, location string) {
 }
 
 func TestConcurrency(t *testing.T) {
-	c, _ := New(&Config{
+	cache, _ := New(&Config{
 		MaxEntries: 1024,
 		Shards:     32768,
 	})
 	keys := make([]string, 1024*1024)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
 	var wg sync.WaitGroup
-
 	for i := 0; i < 1024; i++ {
 		wg.Add(1)
 		go func() {
@@ -252,12 +250,12 @@ func TestConcurrency(t *testing.T) {
 				select {
 				case <-ticker.C:
 					key := keys[rand.Intn(len(keys))]
-					if err := c.Set(key, []byte("v")); err != nil {
+					if err := cache.Set(key, []byte("v")); err != nil {
 						t.Errorf("Set(%s, v): %v", key, err)
 					}
 					//since only 1K entries would be allowed at any time (per config), if may happen that, entry is gone if there were 1k  processing writes
 					//thus not such key error may happens, other test Get operation,
-					if _, err := c.Get(key); err != nil {
+					if _, err := cache.Get(key); err != nil {
 						//t.Errorf("Get(%s): %v", key, err)
 					}
 				case <-ctx.Done():
