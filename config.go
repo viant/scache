@@ -15,7 +15,7 @@ type Config struct {
 	MaxEntries   int    //optional upper entries limit in the cache
 	EntrySize    int    //optional entry size to estimate SizeMb (MaxEntries * EntrySize) when specified
 	SizeMb       int    //optional max cache size, default 1
-	Shards       int    //optional segment shards size,  default MAX(32, MaxEntries / 1024*1024)
+	Shards       uint64 //optional segment shards size,  default MAX(32, MaxEntries / 1024*1024)
 	Location     string //optional path to mapped memory file
 	shardMapSize int
 }
@@ -38,13 +38,14 @@ func (c *Config) Init() {
 	}
 	if c.Shards < MinShards {
 		c.Shards = MinShards
-		if candidate := c.MaxEntries / mb; candidate > c.Shards {
-			c.Shards = candidate
+		if candidate := c.MaxEntries / mb; candidate > int(c.Shards) {
+			c.Shards = uint64(candidate)
 		}
 	}
 	if c.MaxEntries > 0 {
-		c.shardMapSize = 2 * (c.MaxEntries / c.Shards)
+		c.shardMapSize = 2 * (c.MaxEntries / int(c.Shards))
 	} else {
 		c.shardMapSize = DefaultShardMapSize
 	}
+
 }

@@ -17,9 +17,11 @@ type segment struct {
 	config *Config
 	index  uint32
 	data   []byte
+	dataSize uint32
 	tail   uint32
 	keys   uint32
 	mmap   *mmap
+
 
 }
 
@@ -38,22 +40,29 @@ func (s *segment) reset(aMap *shardedMap) {
 	}
 	atomic.StoreUint32(&s.tail, 1)
 	atomic.StoreUint32(&s.keys, 0)
-
 }
+
 
 func (s *segment) get(key string) ([]byte, bool) {
 	shardedMap := s.getShardedMap()
-	headerAddress, ok := shardedMap.get(key)
-	if !ok {
+	headerAddress := shardedMap.getAddress(key)
+	if headerAddress == 0 {
 		return nil, false
 	}
-	if headerAddress > atomic.LoadUint32(&s.tail) {
+	headerAddressEnd := headerAddress+headerSize
+	if headerAddressEnd > s.dataSize {
 		return nil, false
 	}
-	entrySize := binary.LittleEndian.Uint32(s.data[headerAddress : headerAddress+4])
+	entrySize := binary.LittleEndian.Uint32(s.data[headerAddress : headerAddressEnd])
+	if headerAddressEnd > s.dataSize {
+		return nil, false
+	}
 	dataAddress := headerAddress + headerSize
-
-	return s.data[dataAddress : dataAddress+entrySize], true
+	dataAddressEnd := dataAddress + entrySize
+	if dataAddressEnd > atomic.LoadUint32(&s.tail) {
+		return nil, false
+	}
+	return s.data[dataAddress : dataAddressEnd], true
 }
 
 func (s *segment) delete(key string) {
@@ -100,6 +109,7 @@ func (s *segment) allocate(idx int) error {
 	segmentDataSize := s.config.SegmentDataSize()
 	if s.config.Location == "" {
 		s.data = make([]byte, segmentDataSize)
+		s.dataSize = uint32(len(s.data))
 		return nil
 	}
 	s.mmap = newMmap(s.config.Location, s.config.SizeMb*mb)
@@ -108,6 +118,7 @@ func (s *segment) allocate(idx int) error {
 		s.mmap.size = segmentDataSize
 		offset := int64(idx * segmentDataSize)
 		err = s.mmap.assign(offset, &s.data)
+		s.dataSize = uint32(len(s.data))
 	}
 	return err
 }
