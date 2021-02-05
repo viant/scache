@@ -79,25 +79,26 @@ func (s *segment) getShardedMap() *shardedMap {
 	return result
 }
 
-func (s *segment) set(key string, value []byte) bool {
+func (s *segment) set(key string, value []byte) ([]byte, bool) {
 	if maxEntries := s.config.MaxEntries; maxEntries > 0 && int(atomic.LoadUint32(&s.keys)) > maxEntries {
-		return false
+		return nil, false
 	}
 	shardedMap := s.getShardedMap()
 	blobSize := len(value) + headerSize
 	nextAddress := int(atomic.AddUint32(&s.tail, uint32(blobSize)))
 	if nextAddress >= len(s.data) { //out of memory,
 		atomic.SwapUint32(&s.tail, s.dataSize-1)
-		return false
+		return nil, false
 	}
 	headerAddress := nextAddress - blobSize
 	binary.LittleEndian.PutUint32(s.data[headerAddress:headerAddress+headerSize], uint32(len(value)))
 	entryAddress := headerAddress + headerSize
-	copy(s.data[entryAddress:entryAddress+len(value)], value)
+	entryAddressOffset := entryAddress + len(value)
+	copy(s.data[entryAddress:entryAddressOffset], value)
 	if hadKey := shardedMap.put(key, uint32(headerAddress)); !hadKey {
 		atomic.AddUint32(&s.keys, 1)
 	}
-	return true
+	return s.data[entryAddress:entryAddressOffset], true
 }
 
 func (s *segment) allocate(idx int) error {

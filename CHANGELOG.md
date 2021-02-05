@@ -1,3 +1,6 @@
+## July 25 2021 v0.3.0
+* Modify secondary segment fallback branch to return primary segment buffer
+
 ## July 25 2020 v0.2.0
 * Added OnSegmentSwitch listener
 

@@ -63,7 +63,7 @@ func TestSegment_get(t *testing.T) {
 			_, has := segment.get(key)
 			assert.False(t, has, useCase.description)
 			data := strings.Repeat(useCase.pattern, useCase.entrySize/2)
-			added := segment.set(key, []byte(data))
+			_, added := segment.set(key, []byte(data))
 			assert.True(t, added, useCase.description)
 
 			actual, has := segment.get(key)

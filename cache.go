@@ -47,7 +47,7 @@ func (s *Cache) newShardedMap() *shardedMap {
 //Set sets key with value or error
 func (s *Cache) Set(key string, value []byte) error {
 	idx := atomic.LoadUint32(&s.index)
-	isSet := s.segments[idx].set(key, value)
+	_, isSet := s.segments[idx].set(key, value)
 	if !isSet {
 		nextIndex := s.nextIndex(idx)
 		s.mutex.Lock()
@@ -63,7 +63,7 @@ func (s *Cache) Set(key string, value []byte) error {
 		}
 		s.mutex.Unlock()
 		idx = atomic.LoadUint32(&s.index)
-		if !s.segments[idx].set(key, value) {
+		if _, ok := s.segments[idx].set(key, value); !ok {
 			return errors.Errorf("failed to set key: %v", key)
 		}
 
@@ -82,10 +82,10 @@ func (s *Cache) Delete(key string) error {
 func (s *Cache) Get(key string) ([]byte, error) {
 	idx := atomic.LoadUint32(&s.index)
 	value, has := s.segments[idx].get(key)
-	if !has {
+	if !has { //if not found in the current segment find in secondary, when  found copy to primary
 		nextIndex := s.nextIndex(idx)
 		if value, has = s.segments[nextIndex].get(key); has {
-			s.segments[idx].set(key, value)
+			value, _ = s.segments[idx].set(key, value) //return buffer from primary  segment
 		}
 	}
 	if !has {
