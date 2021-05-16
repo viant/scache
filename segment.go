@@ -10,7 +10,11 @@ Idea taken from
 https://dev.to/douglasmakey/how-bigcache-avoids-expensive-gc-cycles-and-speeds-up-concurrent-access-in-go-12bb
 */
 
-const headerSize = 4
+const (
+	headerSize  = 5
+	controlByte = 0x9A
+)
+
 
 type segment struct {
 	*shardedMap
@@ -50,7 +54,7 @@ func (s *segment) get(key string) ([]byte, bool) {
 	if headerAddressEnd > s.dataSize {
 		return nil, false
 	}
-	entrySize := binary.LittleEndian.Uint32(s.data[headerAddress:headerAddressEnd])
+	entrySize := binary.LittleEndian.Uint32(s.data[headerAddress+1:headerAddressEnd])
 	if headerAddressEnd > atomic.LoadUint32(&s.tail) {
 		return nil, false
 	}
@@ -59,8 +63,13 @@ func (s *segment) get(key string) ([]byte, bool) {
 	if dataAddressEnd > s.dataSize {
 		return nil, false
 	}
-	return s.data[dataAddress:dataAddressEnd], true
+	result := s.data[dataAddress:dataAddressEnd]
+	if s.data[headerAddress] != controlByte {
+		return nil, false
+	}
+	return result, true
 }
+
 
 func (s *segment) delete(key string) {
 	shardedMap := s.getShardedMap()
@@ -91,7 +100,8 @@ func (s *segment) set(key string, value []byte) ([]byte, bool) {
 		return nil, false
 	}
 	headerAddress := nextAddress - blobSize
-	binary.LittleEndian.PutUint32(s.data[headerAddress:headerAddress+headerSize], uint32(len(value)))
+	s.data[headerAddress] = controlByte
+	binary.LittleEndian.PutUint32(s.data[headerAddress+1:headerAddress+headerSize], uint32(len(value)))
 	entryAddress := headerAddress + headerSize
 	entryAddressOffset := entryAddress + len(value)
 	copy(s.data[entryAddress:entryAddressOffset], value)
