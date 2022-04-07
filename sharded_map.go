@@ -13,7 +13,7 @@ type shardedMap struct {
 	shardsHash uint64
 }
 
-func (m *shardedMap) getAddress(key string) uint32 {
+func (m *shardedMap) getAddress(key string) uint64 {
 	hashedKey := m.hasher.Sum64(key)
 	index := hashedKey & m.shardsHash
 	m.lock[index].RLock()
@@ -23,7 +23,7 @@ func (m *shardedMap) getAddress(key string) uint32 {
 	}
 	value := m.maps[index][hashedKey]
 	m.lock[index].RUnlock()
-	return value
+	return uint64(value) << 5
 }
 
 func (m *shardedMap) put(key string, value uint32) bool {

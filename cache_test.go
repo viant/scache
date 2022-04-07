@@ -179,7 +179,10 @@ func initCache(entries, entrySize int, location string) *Cache {
 	if cfg.SizeMb < freeMB-1024 && freeMB-1024 > 0 {
 		cfg.SizeMb = freeMB - 1024
 	}
-	cache, _ := New(cfg)
+	cache, err := New(cfg)
+	if err != nil {
+		panic(err)
+	}
 	return cache
 }
 

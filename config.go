@@ -8,12 +8,14 @@ const (
 	//DefaultShardMapSize default map shard allocation size.
 	DefaultShardMapSize = 32 * 1024
 	mb                  = 1024 * 1024
+	alignmentSize       = 32
 )
 
 //Config represents cache config
 type Config struct {
-	MaxEntries   int    //optional upper entries limit in the cache
-	EntrySize    int    //optional entry size to estimate SizeMb (MaxEntries * EntrySize) when specified
+	MaxEntries   int //optional upper entries limit in the cache
+	EntrySize    int //optional entry size to estimate SizeMb (MaxEntries * EntrySize) when specified
+	KeySize      int
 	SizeMb       int    //optional max cache size, default 1
 	Shards       uint64 //optional segment shards size,  default MAX(32, MaxEntries / 1024*1024)
 	Location     string //optional path to mapped memory file
@@ -29,13 +31,15 @@ func (c *Config) SegmentDataSize() int {
 func (c *Config) Init() {
 	if c.SizeMb == 0 {
 		c.SizeMb = DefaultCacheSizeMb
-		if c.MaxEntries > 0 && c.EntrySize > 0 {
-			c.SizeMb += 2 * c.MaxEntries * c.EntrySize / mb
+	}
+
+	if c.MaxEntries > 0 && c.EntrySize > 0 {
+		estSizeMb := DefaultCacheSizeMb + (2*c.MaxEntries*alignSize(headerSize+c.EntrySize))/mb
+		if c.SizeMb < estSizeMb {
+			c.SizeMb = estSizeMb
 		}
 	}
-	if c.SizeMb > 4096*mb { //currently max supported memory
-		c.SizeMb = 4096 * mb
-	}
+
 	if c.Shards < MinShards {
 		c.Shards = MinShards
 		if candidate := c.MaxEntries / mb; candidate > int(c.Shards) {
@@ -48,4 +52,8 @@ func (c *Config) Init() {
 		c.shardMapSize = DefaultShardMapSize
 	}
 
+}
+
+func alignSize(size int) int {
+	return ((size >> 5) + 1) << 5
 }

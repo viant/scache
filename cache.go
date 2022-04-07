@@ -1,18 +1,21 @@
 package scache
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
-const segmentsSize = 2
+const (
+	segmentsSize     = 2
+	maxSupportedSize = 256 * 1024
+)
 
 //Cache represents cache service
 type Cache struct {
 	config   *Config
-	data     []byte
 	segments [segmentsSize]segment
 	index    uint32
 	mutex    sync.Mutex
@@ -107,6 +110,10 @@ func (s *Cache) Close() (err error) {
 //New creates a Cache
 func New(config *Config) (*Cache, error) {
 	config.Init()
+	if config.SizeMb > maxSupportedSize {
+		//given 32 bytes data alignment max addressable space is 256GB
+		return nil, fmt.Errorf("exceeded max supported cache size: 256GB")
+	}
 	var cache = &Cache{
 		config: config,
 	}

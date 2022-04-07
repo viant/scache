@@ -1,3 +1,6 @@
+## Apil 7 2022 v0.4.0
+* Added 32 bytes memory alignment to increase addressable space to 256 GB
+
 ## July 25 2021 v0.3.0
 * Modify secondary segment fallback branch to return primary segment buffer
 
