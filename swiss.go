@@ -57,6 +57,9 @@ func ensureAssignable(fieldName string, destFieldType reflect.Type, srcFieldType
 		srcFieldType = srcFieldType.Elem()
 		ensureAssignable(fieldName, destFieldType, srcFieldType)
 	case reflect.Array:
+		if destFieldType.Len() != srcFieldType.Len() {
+			panic(fmt.Sprintf("SwissMap and swiss.Map have different field %v %v %v, len: %v\n", fieldName, destFieldType, srcFieldType, destFieldType.Len()))
+		}
 		destFieldType = destFieldType.Elem()
 		srcFieldType = srcFieldType.Elem()
 		if destFieldType != srcFieldType && !destFieldType.ConvertibleTo(srcFieldType) {
