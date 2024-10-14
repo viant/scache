@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	groupSize      = 8
-	empty     int8 = -128 // 0b1000_0000
+	empty int8 = -128 // 0b1000_0000
 )
 
 type metadata [groupSize]int8
