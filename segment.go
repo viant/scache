@@ -33,14 +33,15 @@ func (s *segment) close() error {
 	return nil
 }
 
-func (s *segment) reset(aMap *shardedMap) {
-	for i := range aMap.maps {
+func (s *segment) reset() {
+	for i := range s.maps {
 		s.shardedMap.lock[i].Lock()
-		s.shardedMap.maps[i] = aMap.maps[i]
+		clearSwissMap(s.shardedMap.maps[i], keys, values)
 		s.shardedMap.lock[i].Unlock()
 	}
 	atomic.StoreUint64(&s.tail, 32)
 	atomic.StoreUint32(&s.keys, 0)
+
 }
 
 func (s *segment) get(key string) ([]byte, bool) {

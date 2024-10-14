@@ -13,7 +13,7 @@ const (
 	maxSupportedSize = 256 * 1024
 )
 
-//Cache represents cache service
+// Cache represents cache service
 type Cache struct {
 	config   *Config
 	segments [segmentsSize]segment
@@ -47,7 +47,7 @@ func (s *Cache) newShardedMap() *shardedMap {
 	return result
 }
 
-//Set sets key with value or error
+// Set sets key with value or error
 func (s *Cache) Set(key string, value []byte) error {
 	idx := atomic.LoadUint32(&s.index)
 	_, isSet := s.segments[idx].set(key, value)
@@ -58,7 +58,7 @@ func (s *Cache) Set(key string, value []byte) error {
 
 			startTime := time.Now()
 			fn := s.OnSegmentSwitch
-			s.segments[nextIndex].reset(s.newShardedMap())
+			s.segments[nextIndex].reset()
 			atomic.StoreUint32(&s.index, nextIndex)
 			if fn != nil {
 				fn(idx, atomic.LoadUint32(&s.segments[idx].keys), time.Now().Sub(startTime))
@@ -74,14 +74,14 @@ func (s *Cache) Set(key string, value []byte) error {
 	return nil
 }
 
-//Delete deletes key in the cache
+// Delete deletes key in the cache
 func (s *Cache) Delete(key string) error {
 	idx := atomic.LoadUint32(&s.index)
 	s.segments[idx].delete(key)
 	return nil
 }
 
-//Get returns a cache entry for the supplied key or error
+// Get returns a cache entry for the supplied key or error
 func (s *Cache) Get(key string) ([]byte, error) {
 	idx := atomic.LoadUint32(&s.index)
 	value, has := s.segments[idx].get(key)
@@ -97,7 +97,7 @@ func (s *Cache) Get(key string) ([]byte, error) {
 	return value, nil
 }
 
-//Close closes the Cache
+// Close closes the Cache
 func (s *Cache) Close() (err error) {
 	for i := range s.segments {
 		if e := s.segments[i].close(); e != nil {
@@ -107,7 +107,7 @@ func (s *Cache) Close() (err error) {
 	return err
 }
 
-//New creates a Cache
+// New creates a Cache
 func New(config *Config) (*Cache, error) {
 	config.Init()
 	if config.SizeMb > maxSupportedSize {
@@ -128,12 +128,12 @@ func New(config *Config) (*Cache, error) {
 	return cache, nil
 }
 
-//NewMemCache creates a memory backed cache
+// NewMemCache creates a memory backed cache
 func NewMemCache(sizeMb, maxEntries, entrySize int) (*Cache, error) {
 	return New(&Config{SizeMb: sizeMb, EntrySize: entrySize, MaxEntries: maxEntries})
 }
 
-//NewMmapCache creates a memory mapped filed backed cache
+// NewMmapCache creates a memory mapped filed backed cache
 func NewMmapCache(location string, sizeMb, maxEntries, entrySize int) (*Cache, error) {
 	return New(&Config{Location: location, SizeMb: sizeMb, EntrySize: entrySize, MaxEntries: maxEntries})
 }
