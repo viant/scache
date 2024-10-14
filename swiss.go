@@ -84,11 +84,8 @@ func ensureAssignable(fieldName string, destFieldType reflect.Type, srcFieldType
 func clearSwissMap[K comparable, V any](aMap *swiss.Map[K, V], emptyK []K, emptyV []V) {
 
 	m := (*SwissMap[K, V])(unsafe.Pointer(aMap))
-
-	for i, c := range m.ctrl {
-		for j := range c {
-			m.ctrl[i][j] = empty
-		}
+	if m.resident == 0 && m.dead == 0 {
+		return
 	}
 	for i := 0; i < len(m.ctrl); i += len(emptyControl) {
 		if i+len(emptyControl) < len(m.ctrl) {
